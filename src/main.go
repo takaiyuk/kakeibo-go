@@ -41,7 +41,6 @@ func readEnv(filePath string) (map[string]string, error) {
 	envMap := make(map[string]string)
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		log.Fatal(err)
 		return envMap, err
 	}
 	contentString := string(content)
@@ -62,21 +61,39 @@ type slackMessage struct {
 	text string
 }
 
-func getSlackConversationHistory(config *config) []slack.Message {
-	api := slack.New(config.slackToken)
-	param := slack.GetConversationHistoryParameters{
-		ChannelID: config.slackChannelID,
-	}
-	history, err := api.GetConversationHistory(&param)
-	if err != nil {
-		log.Fatal(err)
-		return []slack.Message{}
-	}
-	return history.Messages
+type filterSlackMessagesArgs struct {
+	messages       []*slackMessage
+	dtNow          time.Time
+	excludeDays    int
+	excludeMinutes int
+	isSort         bool
 }
 
-func getSlackMessages(config *config) []*slackMessage {
-	messages := getSlackConversationHistory(config)
+type slackClient struct {
+	token string
+}
+
+func newSlackClient(token string) *slackClient {
+	return &slackClient{token: token}
+}
+
+func (c *slackClient) getConversationHistory(channelID string) ([]slack.Message, error) {
+	api := slack.New(c.token)
+	params := slack.GetConversationHistoryParameters{
+		ChannelID: channelID,
+	}
+	history, err := api.GetConversationHistory(&params)
+	if err != nil {
+		return nil, err
+	}
+	return history.Messages, nil
+}
+
+func (c *slackClient) fetchMessages(channelID string) ([]*slackMessage, error) {
+	messages, err := c.getConversationHistory(channelID)
+	if err != nil {
+		return nil, err
+	}
 	slackMessages := []*slackMessage{}
 	for _, m := range messages {
 		ts, _ := strconv.ParseFloat(m.Timestamp, 64)
@@ -86,18 +103,10 @@ func getSlackMessages(config *config) []*slackMessage {
 		}
 		slackMessages = append(slackMessages, sm)
 	}
-	return slackMessages
+	return slackMessages, nil
 }
 
-type filterSlackMessagesArgs struct {
-	messages       []*slackMessage
-	dtNow          time.Time
-	excludeDays    int
-	excludeMinutes int
-	isSort         bool
-}
-
-func filterSlackMessages(args filterSlackMessagesArgs) []*slackMessage {
+func (c *slackClient) filterMessages(args filterSlackMessagesArgs) []*slackMessage {
 	filteredMessages := []*slackMessage{}
 	for _, m := range args.messages {
 		threshold := float64(args.dtNow.AddDate(0, 0, -args.excludeDays).Add(time.Minute * -time.Duration(args.excludeMinutes)).Unix())
@@ -106,13 +115,30 @@ func filterSlackMessages(args filterSlackMessagesArgs) []*slackMessage {
 		}
 	}
 	if args.isSort {
-		sortSlackMessages(filteredMessages)
+		c.sortMessages(filteredMessages)
 	}
 	return filteredMessages
 }
 
-func sortSlackMessages(messages []*slackMessage) {
+func (c *slackClient) sortMessages(messages []*slackMessage) {
 	sort.Slice(messages, func(i, j int) bool { return messages[i].ts < messages[j].ts })
+}
+
+func getSlackMessages(cfg *config) ([]*slackMessage, error) {
+	c := newSlackClient(cfg.slackToken)
+	messages, err := c.fetchMessages(cfg.slackChannelID)
+	if err != nil {
+		return nil, err
+	}
+	args := filterSlackMessagesArgs{
+		messages:       messages,
+		dtNow:          time.Now(),
+		excludeDays:    0,
+		excludeMinutes: 10,
+		isSort:         true,
+	}
+	filteredMessages := c.filterMessages(args)
+	return filteredMessages, nil
 }
 
 // https://github.com/domnikl/ifttt-webhook
@@ -146,15 +172,16 @@ func (i *ifttt) post(eventName string, v ...string) error {
 	return nil
 }
 
-func postIFTTTWebhook(cfg *config, messages []*slackMessage) {
+func postIFTTTWebhook(cfg *config, messages []*slackMessage) error {
 	i := newIFTTT(cfg.iftttWebhookToken)
 	for _, m := range messages {
 		err := i.post(cfg.iftttEventName, strconv.FormatFloat(m.ts, 'f', -1, 64), m.text)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		fmt.Printf("message to be posted: %f,%s\n", m.ts, m.text)
 	}
+	return nil
 }
 
 func kakeibo() {
@@ -163,16 +190,14 @@ func kakeibo() {
 		log.Fatal(err)
 	}
 	cfg := newConfig(envMap)
-	messages := getSlackMessages(cfg)
-	args := filterSlackMessagesArgs{
-		messages:       messages,
-		dtNow:          time.Now(),
-		excludeDays:    0,
-		excludeMinutes: 10,
-		isSort:         true,
+	filteredMessages, err := getSlackMessages(cfg)
+	if err != nil {
+		log.Fatal(err)
 	}
-	filteredMessages := filterSlackMessages(args)
-	postIFTTTWebhook(cfg, filteredMessages)
+	err = postIFTTTWebhook(cfg, filteredMessages)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {

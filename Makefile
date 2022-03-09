@@ -18,4 +18,6 @@ run:
 	go run ./src/main.go
 
 test:
-	go test ./src/...
+	go test ./src/... -coverprofile=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+	rm coverage.out

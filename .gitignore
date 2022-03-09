@@ -1,3 +1,5 @@
 .env
+coverage.html
+coverage.out
 handler.zip
 kakeibo
