@@ -1,4 +1,4 @@
-module kakeibo-go
+module github.com/takaiyuk/kakeibo-go
 
 go 1.17
 

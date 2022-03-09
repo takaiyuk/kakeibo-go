@@ -1,23 +1,23 @@
-.PHONY: lambda deps build clean zip run test
+.PHONY: lambda deps build zip clean run test
 
-lambda: deps build zip
+lambda: deps build zip clean
 
 deps:
 	go mod tidy
   
 build:
-	GOOS=linux GOARCH=amd64 go build -o kakeibo ./src/main.go
+	GOOS=linux GOARCH=amd64 go build -o kakeibo ./cmd/lambda/main.go
 
 zip:
-	zip handler.zip ./kakeibo ./.env
+	zip -r handler.zip .env kakeibo pkg
 
 clean:
-	rm ./kakeibo ./handler.zip
+	rm ./kakeibo ./lambda
 
 run:
-	go run ./src/main.go
+	go run ./cmd/kakeibo/main.go
 
 test:
-	go test ./src/... -coverprofile=coverage.out
+	go test ./pkg/... -coverprofile=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 	rm coverage.out
