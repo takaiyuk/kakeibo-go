@@ -7,12 +7,18 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/slack-go/slack"
+)
+
+const (
+	envFilePath = "./.env"
 )
 
 type config struct {
@@ -35,6 +41,7 @@ func readEnv(filePath string) (map[string]string, error) {
 	envMap := make(map[string]string)
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		log.Fatal(err)
 		return envMap, err
 	}
 	contentString := string(content)
@@ -124,6 +131,7 @@ func (i *ifttt) post(eventName string, v ...string) error {
 		values["value"+strconv.Itoa(x+1)] = value
 		// only include up to 3 values
 		if x == 2 {
+			log.Printf("only 3 values are allowed. argument %d (%s) and after that are ignored.", x+1, value)
 			break
 		}
 	}
@@ -149,8 +157,8 @@ func postIFTTTWebhook(cfg *config, messages []*slackMessage) {
 	}
 }
 
-func main() {
-	envMap, err := readEnv("./.env")
+func kakeibo() {
+	envMap, err := readEnv(envFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -165,4 +173,13 @@ func main() {
 	}
 	filteredMessages := filterSlackMessages(args)
 	postIFTTTWebhook(cfg, filteredMessages)
+}
+
+func main() {
+	if os.Getenv("AWS_LAMBDA_RUNTIME_API") == "" {
+		// Run locally
+		kakeibo()
+	} else {
+		lambda.Start(kakeibo)
+	}
 }

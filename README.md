@@ -23,11 +23,19 @@ graph LR;
 
 ```
 $ cp .env.example .env
-$ go run ./src/main.go
+$ make run
 ```
 
 ### Test
 
 ```
-$ go test ./src/...
+$ make test
+```
+
+## Lambda
+
+https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/golang-handler.html
+
+```
+$ make lambda
 ```

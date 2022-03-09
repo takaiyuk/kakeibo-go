@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	envFilePath = "./.env.test"
+	envTestFilePath = "./.env.test"
 )
 
 func createEnvFile() {
@@ -21,7 +21,7 @@ IFTTT_WEBHOOK_TOKEN=webhook_token
 SLACK_TOKEN=slack_token
 SLACK_CHANNEL_ID=channel_id
 `
-	err := ioutil.WriteFile(envFilePath, []byte(env), 0644)
+	err := ioutil.WriteFile(envTestFilePath, []byte(env), 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -29,9 +29,9 @@ SLACK_CHANNEL_ID=channel_id
 
 func TestReadEnv(t *testing.T) {
 	createEnvFile()
-	defer os.Remove(envFilePath)
+	defer os.Remove(envTestFilePath)
 
-	envMap, err := readEnv(envFilePath)
+	envMap, err := readEnv(envTestFilePath)
 	assert.NoError(t, err)
 	assert.Equal(t, "event_name", envMap["IFTTT_EVENT_NAME"])
 	assert.Equal(t, "webhook_token", envMap["IFTTT_WEBHOOK_TOKEN"])
@@ -54,9 +54,9 @@ func TestNewConfig(t *testing.T) {
 
 func TestGetSlackMessages(t *testing.T) {
 	createEnvFile()
-	defer os.Remove(envFilePath)
+	defer os.Remove(envTestFilePath)
 
-	envMap, err := readEnv(envFilePath)
+	envMap, err := readEnv(envTestFilePath)
 	if err != nil {
 		t.Fatal(err)
 	}
