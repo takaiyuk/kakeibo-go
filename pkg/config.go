@@ -10,18 +10,18 @@ const (
 )
 
 type config struct {
-	slackToken        string
-	slackChannelID    string
-	iftttWebhookToken string
-	iftttEventName    string
+	SlackToken        string
+	SlackChannelID    string
+	IFTTTWebhookToken string
+	IFTTTEventName    string
 }
 
 func newConfig(envMap map[string]string) *config {
 	return &config{
-		slackToken:        envMap["SLACK_TOKEN"],
-		slackChannelID:    envMap["SLACK_CHANNEL_ID"],
-		iftttWebhookToken: envMap["IFTTT_WEBHOOK_TOKEN"],
-		iftttEventName:    envMap["IFTTT_EVENT_NAME"],
+		SlackToken:        envMap["SLACK_TOKEN"],
+		SlackChannelID:    envMap["SLACK_CHANNEL_ID"],
+		IFTTTWebhookToken: envMap["IFTTT_WEBHOOK_TOKEN"],
+		IFTTTEventName:    envMap["IFTTT_EVENT_NAME"],
 	}
 }
 

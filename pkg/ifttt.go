@@ -11,15 +11,15 @@ import (
 
 // https://github.com/domnikl/ifttt-webhook
 type ifttt struct {
-	apiKey string
+	APIKey string
 }
 
 func newIFTTT(apiKey string) *ifttt {
-	return &ifttt{apiKey: apiKey}
+	return &ifttt{APIKey: apiKey}
 }
 
 func (i *ifttt) post(eventName string, v ...string) error {
-	url := "https://maker.ifttt.com/trigger/" + eventName + "/with/key/" + i.apiKey
+	url := "https://maker.ifttt.com/trigger/" + eventName + "/with/key/" + i.APIKey
 	values := map[string]string{}
 	for x, value := range v {
 		values["value"+strconv.Itoa(x+1)] = value
@@ -41,13 +41,13 @@ func (i *ifttt) post(eventName string, v ...string) error {
 }
 
 func postIFTTTWebhook(cfg *config, messages []*slackMessage) error {
-	i := newIFTTT(cfg.iftttWebhookToken)
+	i := newIFTTT(cfg.IFTTTWebhookToken)
 	for _, m := range messages {
-		err := i.post(cfg.iftttEventName, strconv.FormatFloat(m.ts, 'f', -1, 64), m.text)
+		err := i.post(cfg.IFTTTEventName, strconv.FormatFloat(m.Timestamp, 'f', -1, 64), m.Text)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("message to be posted: %f,%s\n", m.ts, m.text)
+		fmt.Printf("message to be posted: %f,%s\n", m.Timestamp, m.Text)
 	}
 	return nil
 }

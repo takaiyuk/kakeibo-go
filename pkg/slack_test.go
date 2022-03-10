@@ -1,4 +1,4 @@
-package pkg
+package pkg_test
 
 import (
 	"errors"
@@ -8,58 +8,79 @@ import (
 
 	"bou.ke/monkey"
 	"github.com/stretchr/testify/assert"
+	"github.com/takaiyuk/kakeibo-go/pkg"
 )
+
+// TODO: replace with mock
+func TestSlackClient_getConversationHistory(t *testing.T) {
+	envMap, err := pkg.ExportedReadEnv("." + pkg.ExportedEnvFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := pkg.ExportedNewConfig(envMap)
+	api := pkg.ExportedNewSlackClient(cfg.SlackToken)
+
+	var fixtures = []struct {
+		channelID      string
+		expectedLength int
+		expectedError  error
+	}{
+		{channelID: cfg.SlackChannelID, expectedLength: 100, expectedError: nil},
+		{channelID: "wrong_channel_id", expectedLength: 0, expectedError: errors.New("error: channel_not_found")},
+	}
+	for _, tt := range fixtures {
+		t.Run(tt.channelID, func(t *testing.T) {
+			slackMessages, err := pkg.ExportedGetConversationHistory(api, tt.channelID)
+			assert.Equal(t, tt.expectedLength, len(slackMessages))
+			assert.Equal(t, tt.expectedError, err)
+		})
+	}
+}
 
 func TestSlackClient_fetchMessages(t *testing.T) {
 	createEnvFile()
 	defer os.Remove(envTestFilePath)
-	envMap, err := readEnv(envTestFilePath)
+	envMap, err := pkg.ExportedReadEnv(envTestFilePath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := newConfig(envMap)
-	c := newSlackClient(cfg.slackToken)
+	cfg := pkg.ExportedNewConfig(envMap)
+	api := pkg.ExportedNewSlackClient(cfg.SlackToken)
 
 	var fixtures = []struct {
 		channelID     string
-		patchFunc     func(*slackClient, string) ([]*slackMessage, error)
-		expected      []*slackMessage
+		patchFunc     func(*pkg.ExportedSlackClient, string) ([]*pkg.ExportedSlackMessage, error)
+		expected      []*pkg.ExportedSlackMessage
 		expectedError error
 	}{
 		{
-			channelID: cfg.slackChannelID,
-			patchFunc: func(*slackClient, string) ([]*slackMessage, error) {
-				messages := []*slackMessage{
-					{ts: 2.0, text: "test2"},
-					{ts: 1.0, text: "test1"},
+			channelID: cfg.SlackChannelID,
+			patchFunc: func(*pkg.ExportedSlackClient, string) ([]*pkg.ExportedSlackMessage, error) {
+				messages := []*pkg.ExportedSlackMessage{
+					{Timestamp: 2.0, Text: "test2"},
+					{Timestamp: 1.0, Text: "test1"},
 				}
 				return messages, nil
 			},
-			expected: []*slackMessage{
-				{
-					ts:   2.0,
-					text: "test2",
-				},
-				{
-					ts:   1.0,
-					text: "test1",
-				},
+			expected: []*pkg.ExportedSlackMessage{
+				{Timestamp: 2.0, Text: "test2"},
+				{Timestamp: 1.0, Text: "test1"},
 			},
 			expectedError: nil,
 		},
 		{
 			channelID: "wrong_channel_id",
-			patchFunc: func(*slackClient, string) ([]*slackMessage, error) {
-				return nil, errors.New("channel_not_found")
+			patchFunc: func(*pkg.ExportedSlackClient, string) ([]*pkg.ExportedSlackMessage, error) {
+				return nil, errors.New("error: channel_not_found")
 			},
 			expected:      nil,
-			expectedError: errors.New("channel_not_found"),
+			expectedError: errors.New("error: channel_not_found"),
 		},
 	}
 	for _, tt := range fixtures {
 		t.Run(tt.channelID, func(t *testing.T) {
-			monkey.Patch(ExportedGetConversationHistory, tt.patchFunc)
-			slackMessages, err := c.fetchMessages(tt.channelID)
+			monkey.Patch(pkg.ExportedGetConversationHistory, tt.patchFunc)
+			slackMessages, err := pkg.ExportedFetchMessages(api, tt.channelID)
 			assert.Equal(t, tt.expected, slackMessages)
 			assert.Equal(t, tt.expectedError, err)
 		})
@@ -69,7 +90,7 @@ func TestSlackClient_fetchMessages(t *testing.T) {
 func TestSlackClient_filterMessages(t *testing.T) {
 	createEnvFile()
 	defer os.Remove(envTestFilePath)
-	c, err := createSlackClient()
+	api, err := createSlackClient()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,23 +100,23 @@ func TestSlackClient_filterMessages(t *testing.T) {
 		time.Date(2020, 1, 1, 11, 51, 0, 0, time.UTC),
 		time.Date(2020, 1, 1, 11, 49, 0, 0, time.UTC),
 	}
-	slackMessages := []*slackMessage{
-		{ts: float64(inputs[0].Unix()), text: "test1"},
-		{ts: float64(inputs[1].Unix()), text: "test2"},
-		{ts: float64(inputs[2].Unix()), text: "test3"},
+	slackMessages := []*pkg.ExportedSlackMessage{
+		{Timestamp: float64(inputs[0].Unix()), Text: "test1"},
+		{Timestamp: float64(inputs[1].Unix()), Text: "test2"},
+		{Timestamp: float64(inputs[2].Unix()), Text: "test3"},
 	}
-	args := filterSlackMessagesArgs{
-		messages:       slackMessages,
-		dtNow:          time.Date(2020, 1, 1, 12, 0, 0, 0, time.UTC),
-		excludeDays:    0,
-		excludeMinutes: 10,
-		isSort:         true,
+	args := pkg.ExportedFilterSlackMessagesArgs{
+		Messages:       slackMessages,
+		DtNow:          time.Date(2020, 1, 1, 12, 0, 0, 0, time.UTC),
+		ExcludeDays:    0,
+		ExcludeMinutes: 10,
+		IsSort:         true,
 	}
-	filteredMessages := c.filterMessages(args)
+	filteredMessages := pkg.ExportedFilterMessages(api, args)
 	// ソートで新しいメッセージが先頭になる
-	expected := []*slackMessage{
-		{ts: float64(inputs[1].Unix()), text: "test2"},
-		{ts: float64(inputs[0].Unix()), text: "test1"},
+	expected := []*pkg.ExportedSlackMessage{
+		{Timestamp: float64(inputs[1].Unix()), Text: "test2"},
+		{Timestamp: float64(inputs[0].Unix()), Text: "test1"},
 	}
 	assert.Equal(t, expected, filteredMessages)
 }
@@ -103,21 +124,21 @@ func TestSlackClient_filterMessages(t *testing.T) {
 func TestSlackClient_sortSlackMessages(t *testing.T) {
 	createEnvFile()
 	defer os.Remove(envTestFilePath)
-	c, err := createSlackClient()
+	api, err := createSlackClient()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	messages := []*slackMessage{
-		{ts: 3.0, text: "test3"},
-		{ts: 2.0, text: "test2"},
-		{ts: 1.0, text: "test1"},
+	messages := []*pkg.ExportedSlackMessage{
+		{Timestamp: 3.0, Text: "test3"},
+		{Timestamp: 2.0, Text: "test2"},
+		{Timestamp: 1.0, Text: "test1"},
 	}
-	expected := []*slackMessage{
-		{ts: 1.0, text: "test1"},
-		{ts: 2.0, text: "test2"},
-		{ts: 3.0, text: "test3"},
+	expected := []*pkg.ExportedSlackMessage{
+		{Timestamp: 1.0, Text: "test1"},
+		{Timestamp: 2.0, Text: "test2"},
+		{Timestamp: 3.0, Text: "test3"},
 	}
-	c.sortMessages(messages)
+	pkg.ExportedSortMessages(api, messages)
 	assert.Equal(t, expected, messages)
 }

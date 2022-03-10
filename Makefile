@@ -12,7 +12,7 @@ zip:
 	zip -r handler.zip .env kakeibo pkg
 
 clean:
-	rm ./kakeibo ./lambda
+	rm ./kakeibo
 
 run:
 	go run ./cmd/kakeibo/main.go

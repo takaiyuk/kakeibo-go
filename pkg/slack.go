@@ -11,27 +11,27 @@ import (
 )
 
 type slackMessage struct {
-	ts   float64
-	text string
+	Timestamp float64
+	Text      string
 }
 
 type filterSlackMessagesArgs struct {
-	messages       []*slackMessage
-	dtNow          time.Time
-	excludeDays    int
-	excludeMinutes int
-	isSort         bool
+	Messages       []*slackMessage
+	DtNow          time.Time
+	ExcludeDays    int
+	ExcludeMinutes int
+	IsSort         bool
 }
 
 type slackClient struct {
-	token string
+	Token string
 }
 
 func newSlackClient(token string) *slackClient {
-	return &slackClient{token: token}
+	return &slackClient{Token: token}
 }
 
-func (c *slackClient) getConversationHistory(channelID string) ([]*slackMessage, error) {
+func (api *slackClient) getConversationHistory(channelID string) ([]*slackMessage, error) {
 	client := new(http.Client)
 	endpoint := "https://slack.com/api/conversations.history"
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
@@ -41,7 +41,7 @@ func (c *slackClient) getConversationHistory(channelID string) ([]*slackMessage,
 	values := req.URL.Query()
 	values.Set("channel", channelID)
 	req.URL.RawQuery = values.Encode()
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Authorization", "Bearer "+api.Token)
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,6 @@ func (c *slackClient) getConversationHistory(channelID string) ([]*slackMessage,
 		return nil, err
 	}
 	slackMessages := []*slackMessage{}
-	fmt.Println(jsonMap)
 	if jsonMap["ok"] != true {
 		return nil, fmt.Errorf("error: %s", jsonMap["error"])
 	}
@@ -64,53 +63,53 @@ func (c *slackClient) getConversationHistory(channelID string) ([]*slackMessage,
 			return nil, err
 		}
 		sm := &slackMessage{
-			ts:   ts,
-			text: m.(map[string]interface{})["text"].(string),
+			Timestamp: ts,
+			Text:      m.(map[string]interface{})["text"].(string),
 		}
 		slackMessages = append(slackMessages, sm)
 	}
 	return slackMessages, nil
 }
 
-func (c *slackClient) fetchMessages(channelID string) ([]*slackMessage, error) {
-	messages, err := c.getConversationHistory(channelID)
+func (api *slackClient) fetchMessages(channelID string) ([]*slackMessage, error) {
+	messages, err := api.getConversationHistory(channelID)
 	if err != nil {
 		return nil, err
 	}
 	return messages, nil
 }
 
-func (c *slackClient) filterMessages(args filterSlackMessagesArgs) []*slackMessage {
+func (api *slackClient) filterMessages(args filterSlackMessagesArgs) []*slackMessage {
 	filteredMessages := []*slackMessage{}
-	for _, m := range args.messages {
-		threshold := float64(args.dtNow.AddDate(0, 0, -args.excludeDays).Add(time.Minute * -time.Duration(args.excludeMinutes)).Unix())
-		if m.ts > threshold {
+	for _, m := range args.Messages {
+		threshold := float64(args.DtNow.AddDate(0, 0, -args.ExcludeDays).Add(time.Minute * -time.Duration(args.ExcludeMinutes)).Unix())
+		if m.Timestamp > threshold {
 			filteredMessages = append(filteredMessages, m)
 		}
 	}
-	if args.isSort {
-		c.sortMessages(filteredMessages)
+	if args.IsSort {
+		api.sortMessages(filteredMessages)
 	}
 	return filteredMessages
 }
 
-func (c *slackClient) sortMessages(messages []*slackMessage) {
-	sort.Slice(messages, func(i, j int) bool { return messages[i].ts < messages[j].ts })
+func (api *slackClient) sortMessages(messages []*slackMessage) {
+	sort.Slice(messages, func(i, j int) bool { return messages[i].Timestamp < messages[j].Timestamp })
 }
 
 func getSlackMessages(cfg *config) ([]*slackMessage, error) {
-	c := newSlackClient(cfg.slackToken)
-	messages, err := c.fetchMessages(cfg.slackChannelID)
+	api := newSlackClient(cfg.SlackToken)
+	messages, err := api.fetchMessages(cfg.SlackChannelID)
 	if err != nil {
 		return nil, err
 	}
 	args := filterSlackMessagesArgs{
-		messages:       messages,
-		dtNow:          time.Now(),
-		excludeDays:    0,
-		excludeMinutes: 10,
-		isSort:         true,
+		Messages:       messages,
+		DtNow:          time.Now(),
+		ExcludeDays:    0,
+		ExcludeMinutes: 10,
+		IsSort:         true,
 	}
-	filteredMessages := c.filterMessages(args)
+	filteredMessages := api.filterMessages(args)
 	return filteredMessages, nil
 }
