@@ -8,8 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"time"
-
-	"github.com/slack-go/slack"
 )
 
 type slackMessage struct {
@@ -33,19 +31,7 @@ func newSlackClient(token string) *slackClient {
 	return &slackClient{token: token}
 }
 
-func (c *slackClient) getConversationHistory(channelID string) ([]slack.Message, error) {
-	api := slack.New(c.token)
-	params := slack.GetConversationHistoryParameters{
-		ChannelID: channelID,
-	}
-	history, err := api.GetConversationHistory(&params)
-	if err != nil {
-		return nil, err
-	}
-	return history.Messages, nil
-}
-
-func (c *slackClient) getConversationHistoryWithoutSlackLibrary(channelID string) ([]*slackMessage, error) {
+func (c *slackClient) getConversationHistory(channelID string) ([]*slackMessage, error) {
 	client := new(http.Client)
 	endpoint := "https://slack.com/api/conversations.history"
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
@@ -87,8 +73,7 @@ func (c *slackClient) getConversationHistoryWithoutSlackLibrary(channelID string
 }
 
 func (c *slackClient) fetchMessages(channelID string) ([]*slackMessage, error) {
-	// messages, err := c.getConversationHistory(channelID)
-	messages, err := c.getConversationHistoryWithoutSlackLibrary(channelID)
+	messages, err := c.getConversationHistory(channelID)
 	if err != nil {
 		return nil, err
 	}

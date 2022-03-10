@@ -58,7 +58,7 @@ func TestSlackClient_fetchMessages(t *testing.T) {
 	}
 	for _, tt := range fixtures {
 		t.Run(tt.channelID, func(t *testing.T) {
-			monkey.Patch(ExportedGetConversationHistoryWithoutSlackLibrary, tt.patchFunc)
+			monkey.Patch(ExportedGetConversationHistory, tt.patchFunc)
 			slackMessages, err := c.fetchMessages(tt.channelID)
 			assert.Equal(t, tt.expected, slackMessages)
 			assert.Equal(t, tt.expectedError, err)
@@ -120,30 +120,4 @@ func TestSlackClient_sortSlackMessages(t *testing.T) {
 	}
 	c.sortMessages(messages)
 	assert.Equal(t, expected, messages)
-}
-
-func BenchmarkGetConversationHistory(b *testing.B) {
-	createEnvFile()
-	defer os.Remove(envTestFilePath)
-	c, err := createSlackClient()
-	if err != nil {
-		b.Fatal(err)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ExportedGetConversationHistory(c, "channel_id")
-	}
-}
-
-func BenchmarkGetConversationHistoryWithoutSlackLibarary(b *testing.B) {
-	createEnvFile()
-	defer os.Remove(envTestFilePath)
-	c, err := createSlackClient()
-	if err != nil {
-		b.Fatal(err)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ExportedGetConversationHistoryWithoutSlackLibrary(c, "channel_id")
-	}
 }
