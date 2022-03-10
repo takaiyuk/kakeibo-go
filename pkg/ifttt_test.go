@@ -9,7 +9,7 @@ import (
 
 func TestNewIFTTT(t *testing.T) {
 	apiKey := "key"
-	i := pkg.ExportedNewIFTTT(apiKey)
-	expected := &pkg.ExportedIFTTT{APIKey: apiKey}
+	i := pkg.NewIFTTT(apiKey)
+	expected := &pkg.IFTTT{APIKey: apiKey}
 	assert.Equal(t, expected, i)
 }

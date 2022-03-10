@@ -9,16 +9,20 @@ import (
 	"strconv"
 )
 
+type InterfaceIFTTT interface {
+	Post(string, ...string) error
+}
+
 // https://github.com/domnikl/ifttt-webhook
-type ifttt struct {
+type IFTTT struct {
 	APIKey string
 }
 
-func newIFTTT(apiKey string) *ifttt {
-	return &ifttt{APIKey: apiKey}
+func NewIFTTT(apiKey string) *IFTTT {
+	return &IFTTT{APIKey: apiKey}
 }
 
-func (i *ifttt) post(eventName string, v ...string) error {
+func (i *IFTTT) Post(eventName string, v ...string) error {
 	url := "https://maker.ifttt.com/trigger/" + eventName + "/with/key/" + i.APIKey
 	values := map[string]string{}
 	for x, value := range v {
@@ -33,21 +37,13 @@ func (i *ifttt) post(eventName string, v ...string) error {
 	if err != nil {
 		return err
 	}
-	_, err = http.Post(url, "application/json", bytes.NewReader(body))
+	res, err := http.Post(url, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func postIFTTTWebhook(cfg *config, messages []*slackMessage) error {
-	i := newIFTTT(cfg.IFTTTWebhookToken)
-	for _, m := range messages {
-		err := i.post(cfg.IFTTTEventName, strconv.FormatFloat(m.Timestamp, 'f', -1, 64), m.Text)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("message to be posted: %f,%s\n", m.Timestamp, m.Text)
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return fmt.Errorf("error: status code %s", res.Status)
 	}
 	return nil
 }

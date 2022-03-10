@@ -1,12 +1,38 @@
 package pkg_test
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/takaiyuk/kakeibo-go/pkg"
 )
+
+const (
+	envTestFilePath = "./.env.test"
+)
+
+func createEnvFile() {
+	env := `IFTTT_EVENT_NAME=event_name
+IFTTT_WEBHOOK_TOKEN=webhook_token
+SLACK_TOKEN=slack_token
+SLACK_CHANNEL_ID=channel_id
+`
+	err := ioutil.WriteFile(envTestFilePath, []byte(env), 0644)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func createConfig() *pkg.Config {
+	createEnvFile()
+	defer os.Remove(envTestFilePath)
+
+	envMap, _ := pkg.ReadEnv(envTestFilePath)
+	cfg := pkg.NewConfig(envMap)
+	return cfg
+}
 
 func TestReadEnv(t *testing.T) {
 	createEnvFile()
@@ -35,7 +61,7 @@ func TestReadEnv(t *testing.T) {
 	}
 	for _, tt := range fixtures {
 		t.Run(tt.filePath, func(t *testing.T) {
-			envMap, err := pkg.ExportedReadEnv(tt.filePath)
+			envMap, err := pkg.ReadEnv(tt.filePath)
 			if tt.expectedIsError {
 				assert.Error(t, err)
 			} else {
@@ -50,11 +76,11 @@ func TestNewConfig(t *testing.T) {
 	createEnvFile()
 	defer os.Remove(envTestFilePath)
 
-	envMap, err := pkg.ExportedReadEnv(envTestFilePath)
+	envMap, err := pkg.ReadEnv(envTestFilePath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := pkg.ExportedNewConfig(envMap)
+	cfg := pkg.NewConfig(envMap)
 	assert.Equal(t, "event_name", cfg.IFTTTEventName)
 	assert.Equal(t, "webhook_token", cfg.IFTTTWebhookToken)
 	assert.Equal(t, "slack_token", cfg.SlackToken)

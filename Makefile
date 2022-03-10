@@ -1,4 +1,4 @@
-.PHONY: lambda deps build zip clean run test bench
+.PHONY: lambda deps build zip clean run mockgen test
 
 lambda: deps build zip clean
 
@@ -17,10 +17,15 @@ clean:
 run:
 	go run ./cmd/kakeibo/main.go
 
+mockgen: pkg/mock_pkg/mock_pkg.go
+
+pkg/mock_pkg/mock_pkg.go:
+	mockgen -destination $@ github.com/takaiyuk/kakeibo-go/pkg InterfaceIFTTT,InterfaceService,InterfaceSlackClient
+
 test:
 	go test ./pkg/... -coverprofile=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 	rm coverage.out
 
-bench:
-	go test -bench=. -benchmem ./pkg/...
+# bench:
+# 	go test -bench=. -benchmem ./pkg/...

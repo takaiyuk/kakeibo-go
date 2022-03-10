@@ -6,18 +6,18 @@ import (
 )
 
 const (
-	envFilePath = "./.env"
+	EnvFilePath = "./.env"
 )
 
-type config struct {
+type Config struct {
 	SlackToken        string
 	SlackChannelID    string
 	IFTTTWebhookToken string
 	IFTTTEventName    string
 }
 
-func newConfig(envMap map[string]string) *config {
-	return &config{
+func NewConfig(envMap map[string]string) *Config {
+	return &Config{
 		SlackToken:        envMap["SLACK_TOKEN"],
 		SlackChannelID:    envMap["SLACK_CHANNEL_ID"],
 		IFTTTWebhookToken: envMap["IFTTT_WEBHOOK_TOKEN"],
@@ -25,7 +25,7 @@ func newConfig(envMap map[string]string) *config {
 	}
 }
 
-func readEnv(filePath string) (map[string]string, error) {
+func ReadEnv(filePath string) (map[string]string, error) {
 	envMap := make(map[string]string)
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
