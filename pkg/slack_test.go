@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"bou.ke/monkey"
-	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,26 +22,16 @@ func TestSlackClient_fetchMessages(t *testing.T) {
 
 	var fixtures = []struct {
 		channelID     string
-		patchFunc     func(*slackClient, string) ([]slack.Message, error)
+		patchFunc     func(*slackClient, string) ([]*slackMessage, error)
 		expected      []*slackMessage
 		expectedError error
 	}{
 		{
 			channelID: cfg.slackChannelID,
-			patchFunc: func(*slackClient, string) ([]slack.Message, error) {
-				messages := []slack.Message{
-					{
-						Msg: slack.Msg{
-							Timestamp: "2.0",
-							Text:      "test2",
-						},
-					},
-					{
-						Msg: slack.Msg{
-							Timestamp: "1.0",
-							Text:      "test1",
-						},
-					},
+			patchFunc: func(*slackClient, string) ([]*slackMessage, error) {
+				messages := []*slackMessage{
+					{ts: 2.0, text: "test2"},
+					{ts: 1.0, text: "test1"},
 				}
 				return messages, nil
 			},
@@ -60,7 +49,7 @@ func TestSlackClient_fetchMessages(t *testing.T) {
 		},
 		{
 			channelID: "wrong_channel_id",
-			patchFunc: func(*slackClient, string) ([]slack.Message, error) {
+			patchFunc: func(*slackClient, string) ([]*slackMessage, error) {
 				return nil, errors.New("channel_not_found")
 			},
 			expected:      nil,
@@ -69,7 +58,7 @@ func TestSlackClient_fetchMessages(t *testing.T) {
 	}
 	for _, tt := range fixtures {
 		t.Run(tt.channelID, func(t *testing.T) {
-			monkey.Patch(ExportedGetConversationHistory, tt.patchFunc)
+			monkey.Patch(ExportedGetConversationHistoryWithoutSlackLibrary, tt.patchFunc)
 			slackMessages, err := c.fetchMessages(tt.channelID)
 			assert.Equal(t, tt.expected, slackMessages)
 			assert.Equal(t, tt.expectedError, err)
@@ -133,9 +122,28 @@ func TestSlackClient_sortSlackMessages(t *testing.T) {
 	assert.Equal(t, expected, messages)
 }
 
-func TestNewIFTTT(t *testing.T) {
-	apiKey := "key"
-	i := newIFTTT(apiKey)
-	expected := &ifttt{apiKey: apiKey}
-	assert.Equal(t, expected, i)
+func BenchmarkGetConversationHistory(b *testing.B) {
+	createEnvFile()
+	defer os.Remove(envTestFilePath)
+	c, err := createSlackClient()
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ExportedGetConversationHistory(c, "channel_id")
+	}
+}
+
+func BenchmarkGetConversationHistoryWithoutSlackLibarary(b *testing.B) {
+	createEnvFile()
+	defer os.Remove(envTestFilePath)
+	c, err := createSlackClient()
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ExportedGetConversationHistoryWithoutSlackLibrary(c, "channel_id")
+	}
 }

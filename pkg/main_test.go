@@ -9,7 +9,8 @@ const (
 )
 
 var (
-	ExportedGetConversationHistory = (*slackClient).getConversationHistory
+	ExportedGetConversationHistory                    = (*slackClient).getConversationHistory
+	ExportedGetConversationHistoryWithoutSlackLibrary = (*slackClient).getConversationHistoryWithoutSlackLibrary
 )
 
 func createEnvFile() {

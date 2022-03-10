@@ -1,4 +1,4 @@
-.PHONY: lambda deps build zip clean run test
+.PHONY: lambda deps build zip clean run test bench
 
 lambda: deps build zip clean
 
@@ -21,3 +21,6 @@ test:
 	go test ./pkg/... -coverprofile=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 	rm coverage.out
+
+bench:
+	go test -bench=. -benchmem ./pkg/...

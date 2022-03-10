@@ -1,6 +1,10 @@
 package pkg
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"sort"
 	"strconv"
 	"time"
@@ -41,21 +45,54 @@ func (c *slackClient) getConversationHistory(channelID string) ([]slack.Message,
 	return history.Messages, nil
 }
 
-func (c *slackClient) fetchMessages(channelID string) ([]*slackMessage, error) {
-	messages, err := c.getConversationHistory(channelID)
+func (c *slackClient) getConversationHistoryWithoutSlackLibrary(channelID string) ([]*slackMessage, error) {
+	client := new(http.Client)
+	endpoint := "https://slack.com/api/conversations.history"
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	values := req.URL.Query()
+	values.Set("channel", channelID)
+	req.URL.RawQuery = values.Encode()
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	byteBody, _ := ioutil.ReadAll(res.Body)
+	var jsonMap map[string]interface{}
+	err = json.Unmarshal(byteBody, &jsonMap)
 	if err != nil {
 		return nil, err
 	}
 	slackMessages := []*slackMessage{}
-	for _, m := range messages {
-		ts, _ := strconv.ParseFloat(m.Timestamp, 64)
+	fmt.Println(jsonMap)
+	if jsonMap["ok"] != true {
+		return nil, fmt.Errorf("error: %s", jsonMap["error"])
+	}
+	for _, m := range jsonMap["messages"].([]interface{}) {
+		ts, err := strconv.ParseFloat(m.(map[string]interface{})["ts"].(string), 64)
+		if err != nil {
+			return nil, err
+		}
 		sm := &slackMessage{
 			ts:   ts,
-			text: m.Text,
+			text: m.(map[string]interface{})["text"].(string),
 		}
 		slackMessages = append(slackMessages, sm)
 	}
 	return slackMessages, nil
+}
+
+func (c *slackClient) fetchMessages(channelID string) ([]*slackMessage, error) {
+	// messages, err := c.getConversationHistory(channelID)
+	messages, err := c.getConversationHistoryWithoutSlackLibrary(channelID)
+	if err != nil {
+		return nil, err
+	}
+	return messages, nil
 }
 
 func (c *slackClient) filterMessages(args filterSlackMessagesArgs) []*slackMessage {
