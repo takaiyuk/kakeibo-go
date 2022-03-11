@@ -1,4 +1,5 @@
 .env
+.env.test
 coverage.html
 coverage.out
 handler.zip

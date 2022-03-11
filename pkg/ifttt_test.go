@@ -7,9 +7,9 @@ import (
 	"github.com/takaiyuk/kakeibo-go/pkg"
 )
 
-func TestNewIFTTT(t *testing.T) {
+func TestNewIFTTTClient(t *testing.T) {
 	apiKey := "key"
-	i := pkg.NewIFTTT(apiKey)
-	expected := &pkg.IFTTT{APIKey: apiKey}
+	i := pkg.NewIFTTTClient(apiKey)
+	expected := &pkg.IFTTTClient{APIKey: apiKey}
 	assert.Equal(t, expected, i)
 }

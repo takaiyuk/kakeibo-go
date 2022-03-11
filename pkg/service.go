@@ -49,7 +49,7 @@ func Kakeibo() {
 	}
 	cfg := NewConfig(envMap)
 	api := NewSlackClient(cfg.SlackToken)
-	ifttt := NewIFTTT(cfg.IFTTTWebhookToken)
+	ifttt := NewIFTTTClient(cfg.IFTTTWebhookToken)
 	s := NewService(api, ifttt)
 	filterSlackMessagesOptions := &FilterSlackMessagesOptions{
 		DtNow:          time.Now(),

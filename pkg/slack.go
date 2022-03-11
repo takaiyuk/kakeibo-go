@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+var (
+	baseSlackEndpoint = "https://slack.com/api/"
+)
+
 type SlackMessage struct {
 	Timestamp float64
 	Text      string
@@ -38,7 +42,7 @@ func NewSlackClient(token string) *SlackClient {
 
 func (api *SlackClient) GetConversationHistory(channelID string) ([]*SlackMessage, error) {
 	client := new(http.Client)
-	endpoint := "https://slack.com/api/conversations.history"
+	endpoint := baseSlackEndpoint + "conversations.history"
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err

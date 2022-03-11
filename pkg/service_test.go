@@ -14,7 +14,7 @@ import (
 func TestNewService(t *testing.T) {
 	cfg := createConfig()
 	api := pkg.NewSlackClient(cfg.SlackToken)
-	ifttt := pkg.NewIFTTT(cfg.IFTTTWebhookToken)
+	ifttt := pkg.NewIFTTTClient(cfg.IFTTTWebhookToken)
 	s := pkg.NewService(api, ifttt)
 	assert.Equal(t, api, s.API)
 	assert.Equal(t, ifttt, s.IFTTT)
@@ -94,6 +94,4 @@ func TestPostIFTTTWebhook(t *testing.T) {
 	}
 }
 
-// func TestKakeibo(t *testing.T) {
-// 	pkg.Kakeibo()
-// }
+// func TestKakeibo(t *testing.T) {}

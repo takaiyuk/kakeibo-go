@@ -9,21 +9,25 @@ import (
 	"strconv"
 )
 
+var (
+	baseIFTTTEndpoint = "https://maker.ifttt.com/trigger/"
+)
+
 type InterfaceIFTTT interface {
 	Post(string, ...string) error
 }
 
 // https://github.com/domnikl/ifttt-webhook
-type IFTTT struct {
+type IFTTTClient struct {
 	APIKey string
 }
 
-func NewIFTTT(apiKey string) *IFTTT {
-	return &IFTTT{APIKey: apiKey}
+func NewIFTTTClient(apiKey string) *IFTTTClient {
+	return &IFTTTClient{APIKey: apiKey}
 }
 
-func (i *IFTTT) Post(eventName string, v ...string) error {
-	url := "https://maker.ifttt.com/trigger/" + eventName + "/with/key/" + i.APIKey
+func (i *IFTTTClient) Post(eventName string, v ...string) error {
+	url := baseIFTTTEndpoint + eventName + "/with/key/" + i.APIKey
 	values := map[string]string{}
 	for x, value := range v {
 		values["value"+strconv.Itoa(x+1)] = value
