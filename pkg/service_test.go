@@ -72,8 +72,8 @@ func TestPostIFTTTWebhook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ifttt := mock_pkg.NewMockInterfaceIFTTT(ctrl)
-	ifttt.EXPECT().Post(cfg.IFTTTEventName, strconv.FormatFloat(v1, 'f', -1, 64), v2).Return(nil)
-	ifttt.EXPECT().Post("", strconv.FormatFloat(v1, 'f', -1, 64), v2).Return(errors.New("error: status code 401 Unauthorized"))
+	ifttt.EXPECT().Emit(cfg.IFTTTEventName, strconv.FormatFloat(v1, 'f', -1, 64), v2).Return(nil)
+	ifttt.EXPECT().Emit("", strconv.FormatFloat(v1, 'f', -1, 64), v2).Return(errors.New("error: status code 401 Unauthorized"))
 
 	s := pkg.NewService(nil, ifttt)
 	msgs := []*pkg.SlackMessage{{Timestamp: v1, Text: v2}}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,7 +15,8 @@ var (
 )
 
 type InterfaceIFTTT interface {
-	Post(string, ...string) error
+	Emit(string, ...string) error
+	Post(string, string, io.Reader) error
 }
 
 // https://github.com/domnikl/ifttt-webhook
@@ -26,7 +28,7 @@ func NewIFTTTClient(apiKey string) *IFTTTClient {
 	return &IFTTTClient{APIKey: apiKey}
 }
 
-func (i *IFTTTClient) Post(eventName string, v ...string) error {
+func (i *IFTTTClient) Emit(eventName string, v ...string) error {
 	url := baseIFTTTEndpoint + eventName + "/with/key/" + i.APIKey
 	values := map[string]string{}
 	for x, value := range v {
@@ -41,7 +43,12 @@ func (i *IFTTTClient) Post(eventName string, v ...string) error {
 	if err != nil {
 		return err
 	}
-	res, err := http.Post(url, "application/json", bytes.NewReader(body))
+	err = i.Post(url, "application/json", bytes.NewReader(body))
+	return err
+}
+
+func (i *IFTTTClient) Post(url, contentType string, body io.Reader) error {
+	res, err := http.Post(url, contentType, body)
 	if err != nil {
 		return err
 	}

@@ -33,7 +33,7 @@ func (s *Service) GetSlackMessages(cfg *Config, options *FilterSlackMessagesOpti
 
 func (s *Service) PostIFTTTWebhook(cfg *Config, messages []*SlackMessage) error {
 	for _, m := range messages {
-		err := s.IFTTT.Post(cfg.IFTTTEventName, strconv.FormatFloat(m.Timestamp, 'f', -1, 64), m.Text)
+		err := s.IFTTT.Emit(cfg.IFTTTEventName, strconv.FormatFloat(m.Timestamp, 'f', -1, 64), m.Text)
 		if err != nil {
 			return err
 		}
