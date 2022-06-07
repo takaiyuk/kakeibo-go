@@ -17,10 +17,8 @@ clean:
 run:
 	go run ./cmd/kakeibo/main.go
 
-mockgen: pkg/mock_pkg/mock_pkg.go
-
-pkg/mock_pkg/mock_pkg.go:
-	mockgen -destination $@ github.com/takaiyuk/kakeibo-go/pkg InterfaceIFTTT,InterfaceService,InterfaceSlackClient
+mockgen:
+	go generate ./pkg/...
 
 test:
 	go test ./pkg/... -coverprofile=coverage.out
