@@ -33,15 +33,15 @@ type InterfaceSlackClient interface {
 	FilterMessages([]*SlackMessage, *FilterSlackMessagesOptions) []*SlackMessage
 }
 
-type SlackClient struct {
+type slackClient struct {
 	Token string
 }
 
-func NewSlackClient(token string) *SlackClient {
-	return &SlackClient{Token: token}
+func NewSlackClient(token string) *slackClient {
+	return &slackClient{Token: token}
 }
 
-func (api *SlackClient) GetConversationHistory(channelID string) ([]*SlackMessage, error) {
+func (api *slackClient) GetConversationHistory(channelID string) ([]*SlackMessage, error) {
 	client := new(http.Client)
 	endpoint := baseSlackEndpoint + "conversations.history"
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
@@ -81,7 +81,7 @@ func (api *SlackClient) GetConversationHistory(channelID string) ([]*SlackMessag
 	return slackMessages, nil
 }
 
-func (api *SlackClient) FetchMessages(channelID string) ([]*SlackMessage, error) {
+func (api *slackClient) FetchMessages(channelID string) ([]*SlackMessage, error) {
 	messages, err := api.GetConversationHistory(channelID)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (api *SlackClient) FetchMessages(channelID string) ([]*SlackMessage, error)
 	return messages, nil
 }
 
-func (api *SlackClient) FilterMessages(messages []*SlackMessage, options *FilterSlackMessagesOptions) []*SlackMessage {
+func (api *slackClient) FilterMessages(messages []*SlackMessage, options *FilterSlackMessagesOptions) []*SlackMessage {
 	filteredMessages := []*SlackMessage{}
 	for _, m := range messages {
 		threshold := float64(options.DtNow.AddDate(0, 0, -options.ExcludeDays).Add(time.Minute * -time.Duration(options.ExcludeMinutes)).Unix())

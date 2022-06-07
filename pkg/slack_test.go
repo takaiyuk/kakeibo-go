@@ -12,7 +12,7 @@ import (
 	"github.com/takaiyuk/kakeibo-go/pkg"
 )
 
-func createSlackClient() (*pkg.SlackClient, error) {
+func createSlackClient() (*pkg.ExportedSlackClient, error) {
 	envMap, err := pkg.ReadEnv(envTestFilePath)
 	if err != nil {
 		return nil, err
@@ -33,13 +33,13 @@ func TestSlackClient_FetchMessages(t *testing.T) {
 
 	var fixtures = []struct {
 		channelID     string
-		patchFunc     func(*pkg.SlackClient, string) ([]*pkg.SlackMessage, error)
+		patchFunc     func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error)
 		expected      []*pkg.SlackMessage
 		expectedError error
 	}{
 		{
 			channelID: "correct_channel_id",
-			patchFunc: func(*pkg.SlackClient, string) ([]*pkg.SlackMessage, error) {
+			patchFunc: func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error) {
 				messages := []*pkg.SlackMessage{
 					{Timestamp: 2.0, Text: "test2"},
 					{Timestamp: 1.0, Text: "test1"},
@@ -54,7 +54,7 @@ func TestSlackClient_FetchMessages(t *testing.T) {
 		},
 		{
 			channelID: "wrong_channel_id",
-			patchFunc: func(*pkg.SlackClient, string) ([]*pkg.SlackMessage, error) {
+			patchFunc: func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error) {
 				return nil, errors.New("error: channel_not_found")
 			},
 			expected:      nil,

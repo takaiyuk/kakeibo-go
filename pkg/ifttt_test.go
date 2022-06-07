@@ -13,14 +13,14 @@ import (
 func TestNewIFTTTClient(t *testing.T) {
 	apiKey := "key"
 	i := pkg.NewIFTTTClient(apiKey)
-	expected := &pkg.IFTTTClient{APIKey: apiKey}
+	expected := &pkg.ExportedIFTTTClient{APIKey: apiKey}
 	assert.Equal(t, expected, i)
 }
 
 func TestIFTTTClient_Post(t *testing.T) {
 	apiKey := "key"
 	i := pkg.NewIFTTTClient(apiKey)
-	monkey.PatchInstanceMethod(reflect.TypeOf(i), "Post", func(*pkg.IFTTTClient, string, string, io.Reader) error {
+	monkey.PatchInstanceMethod(reflect.TypeOf(i), "Post", func(*pkg.ExportedIFTTTClient, string, string, io.Reader) error {
 		return nil
 	})
 	err := i.Emit("event", "value1", "value2")

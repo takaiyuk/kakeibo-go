@@ -21,15 +21,15 @@ type InterfaceIFTTT interface {
 }
 
 // https://github.com/domnikl/ifttt-webhook
-type IFTTTClient struct {
+type iftttClient struct {
 	APIKey string
 }
 
-func NewIFTTTClient(apiKey string) *IFTTTClient {
-	return &IFTTTClient{APIKey: apiKey}
+func NewIFTTTClient(apiKey string) *iftttClient {
+	return &iftttClient{APIKey: apiKey}
 }
 
-func (i *IFTTTClient) Emit(eventName string, v ...string) error {
+func (i *iftttClient) Emit(eventName string, v ...string) error {
 	url := baseIFTTTEndpoint + eventName + "/with/key/" + i.APIKey
 	values := map[string]string{}
 	for x, value := range v {
@@ -48,7 +48,7 @@ func (i *IFTTTClient) Emit(eventName string, v ...string) error {
 	return err
 }
 
-func (i *IFTTTClient) Post(url, contentType string, body io.Reader) error {
+func (i *iftttClient) Post(url, contentType string, body io.Reader) error {
 	res, err := http.Post(url, contentType, body)
 	if err != nil {
 		return err

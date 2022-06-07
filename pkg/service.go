@@ -8,21 +8,27 @@ import (
 	"time"
 )
 
+const (
+	excludeDays    = 0
+	excludeMinutes = 10
+	isSort         = true
+)
+
 type InterfaceService interface {
 	GetSlackMessages(*Config, *FilterSlackMessagesOptions) ([]*SlackMessage, error)
 	PostIFTTTWebhook(*Config, []*SlackMessage) error
 }
 
-type Service struct {
+type service struct {
 	API   InterfaceSlackClient
 	IFTTT InterfaceIFTTT
 }
 
-func NewService(api InterfaceSlackClient, ifttt InterfaceIFTTT) *Service {
-	return &Service{API: api, IFTTT: ifttt}
+func NewService(api InterfaceSlackClient, ifttt InterfaceIFTTT) *service {
+	return &service{API: api, IFTTT: ifttt}
 }
 
-func (s *Service) GetSlackMessages(cfg *Config, options *FilterSlackMessagesOptions) ([]*SlackMessage, error) {
+func (s *service) GetSlackMessages(cfg *Config, options *FilterSlackMessagesOptions) ([]*SlackMessage, error) {
 	messages, err := s.API.FetchMessages(cfg.SlackChannelID)
 	if err != nil {
 		return nil, err
@@ -32,7 +38,7 @@ func (s *Service) GetSlackMessages(cfg *Config, options *FilterSlackMessagesOpti
 	return messages, nil
 }
 
-func (s *Service) PostIFTTTWebhook(cfg *Config, messages []*SlackMessage) error {
+func (s *service) PostIFTTTWebhook(cfg *Config, messages []*SlackMessage) error {
 	for _, m := range messages {
 		err := s.IFTTT.Emit(cfg.IFTTTEventName, strconv.FormatFloat(m.Timestamp, 'f', -1, 64), m.Text)
 		if err != nil {
@@ -54,9 +60,9 @@ func Kakeibo() {
 	s := NewService(api, ifttt)
 	filterSlackMessagesOptions := &FilterSlackMessagesOptions{
 		DtNow:          time.Now(),
-		ExcludeDays:    0,
-		ExcludeMinutes: 10,
-		IsSort:         true,
+		ExcludeDays:    excludeDays,
+		ExcludeMinutes: excludeMinutes,
+		IsSort:         isSort,
 	}
 	filteredMessages, err := s.GetSlackMessages(cfg, filterSlackMessagesOptions)
 	if err != nil {
