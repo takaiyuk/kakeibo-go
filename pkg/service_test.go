@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/takaiyuk/kakeibo-go/mock"
 	"github.com/takaiyuk/kakeibo-go/pkg"
-	"github.com/takaiyuk/kakeibo-go/pkg/mock_pkg"
 )
 
 func TestNewService(t *testing.T) {
@@ -38,7 +38,7 @@ func TestGetSlackMessages(t *testing.T) {
 	)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	api := mock_pkg.NewMockInterfaceSlackClient(ctrl)
+	api := mock.NewMockInterfaceSlackClient(ctrl)
 	api.EXPECT().FetchMessages("channel_id").Return(slackMessages, nil)
 	api.EXPECT().FetchMessages("").Return(nil, errors.New("error: channel_not_found"))
 	api.EXPECT().FilterMessages(slackMessages, gomock.Any()).Return(filterdSlackMessages)
@@ -71,7 +71,7 @@ func TestPostIFTTTWebhook(t *testing.T) {
 	cfg := createConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	ifttt := mock_pkg.NewMockInterfaceIFTTT(ctrl)
+	ifttt := mock.NewMockInterfaceIFTTT(ctrl)
 	ifttt.EXPECT().Emit(cfg.IFTTTEventName, strconv.FormatFloat(v1, 'f', -1, 64), v2).Return(nil)
 	ifttt.EXPECT().Emit("", strconv.FormatFloat(v1, 'f', -1, 64), v2).Return(errors.New("error: status code 401 Unauthorized"))
 
