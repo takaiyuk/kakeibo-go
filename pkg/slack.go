@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -92,10 +93,18 @@ func (api *slackClient) FetchMessages(channelID string) ([]*SlackMessage, error)
 func (api *slackClient) FilterMessages(messages []*SlackMessage, options *FilterSlackMessagesOptions) []*SlackMessage {
 	filteredMessages := []*SlackMessage{}
 	for _, m := range messages {
+		// 特定の日時より前のメッセージを除外
 		threshold := float64(options.DtNow.AddDate(0, 0, -options.ExcludeDays).Add(time.Minute * -time.Duration(options.ExcludeMinutes)).Unix())
-		if m.Timestamp > threshold {
-			filteredMessages = append(filteredMessages, m)
+		if m.Timestamp <= threshold {
+			continue
 		}
+
+		// 特定の文字列から始まるメッセージを除外
+		if strings.HasPrefix(m.Text, "[ignore]") {
+			continue
+		}
+
+		filteredMessages = append(filteredMessages, m)
 	}
 	if options.IsSort {
 		SortMessages(filteredMessages)

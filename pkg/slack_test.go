@@ -81,13 +81,15 @@ func TestSlackClient_FilterMessages(t *testing.T) {
 
 	inputs := []time.Time{
 		time.Date(2020, 1, 1, 11, 59, 0, 0, time.UTC),
+		time.Date(2020, 1, 1, 11, 53, 0, 0, time.UTC),
 		time.Date(2020, 1, 1, 11, 51, 0, 0, time.UTC),
 		time.Date(2020, 1, 1, 11, 49, 0, 0, time.UTC),
 	}
 	slackMessages := []*pkg.SlackMessage{
 		{Timestamp: float64(inputs[0].Unix()), Text: "test1"},
 		{Timestamp: float64(inputs[1].Unix()), Text: "test2"},
-		{Timestamp: float64(inputs[2].Unix()), Text: "test3"},
+		{Timestamp: float64(inputs[2].Unix()), Text: "[ignore] test3"},
+		{Timestamp: float64(inputs[3].Unix()), Text: "test4"},
 	}
 	options := &pkg.FilterSlackMessagesOptions{
 		DtNow:          time.Date(2020, 1, 1, 12, 0, 0, 0, time.UTC),
@@ -96,7 +98,7 @@ func TestSlackClient_FilterMessages(t *testing.T) {
 		IsSort:         true,
 	}
 	filteredMessages := api.FilterMessages(slackMessages, options)
-	// ソートで新しいメッセージが先頭になる
+	// ソートで古いメッセージが先頭になる
 	expected := []*pkg.SlackMessage{
 		{Timestamp: float64(inputs[1].Unix()), Text: "test2"},
 		{Timestamp: float64(inputs[0].Unix()), Text: "test1"},
