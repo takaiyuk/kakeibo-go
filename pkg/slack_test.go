@@ -1,13 +1,10 @@
 package pkg_test
 
 import (
-	"errors"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
-	"bou.ke/monkey"
 	"github.com/stretchr/testify/assert"
 	"github.com/takaiyuk/kakeibo-go/pkg"
 )
@@ -21,55 +18,58 @@ func createSlackClient() (*pkg.ExportedSlackClient, error) {
 	api := pkg.NewSlackClient(cfg.SlackToken)
 	return api, nil
 }
-func TestSlackClient_FetchMessages(t *testing.T) {
-	createEnvFile()
-	defer os.Remove(envTestFilePath)
-	envMap, err := pkg.ReadEnv(envTestFilePath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg := pkg.NewConfig(envMap)
-	api := pkg.NewSlackClient(cfg.SlackToken)
 
-	var fixtures = []struct {
-		channelID     string
-		patchFunc     func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error)
-		expected      []*pkg.SlackMessage
-		expectedError error
-	}{
-		{
-			channelID: "correct_channel_id",
-			patchFunc: func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error) {
-				messages := []*pkg.SlackMessage{
-					{Timestamp: 2.0, Text: "test2"},
-					{Timestamp: 1.0, Text: "test1"},
-				}
-				return messages, nil
-			},
-			expected: []*pkg.SlackMessage{
-				{Timestamp: 2.0, Text: "test2"},
-				{Timestamp: 1.0, Text: "test1"},
-			},
-			expectedError: nil,
-		},
-		{
-			channelID: "wrong_channel_id",
-			patchFunc: func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error) {
-				return nil, errors.New("error: channel_not_found")
-			},
-			expected:      nil,
-			expectedError: errors.New("error: channel_not_found"),
-		},
-	}
-	for _, tt := range fixtures {
-		t.Run(tt.channelID, func(t *testing.T) {
-			monkey.PatchInstanceMethod(reflect.TypeOf(api), "GetConversationHistory", tt.patchFunc)
-			slackMessages, err := api.FetchMessages(tt.channelID)
-			assert.Equal(t, tt.expected, slackMessages)
-			assert.Equal(t, tt.expectedError, err)
-		})
-	}
-}
+// TODO: Do not monkey patch
+//
+// func TestSlackClient_FetchMessages(t *testing.T) {
+// 	createEnvFile()
+// 	defer os.Remove(envTestFilePath)
+// 	envMap, err := pkg.ReadEnv(envTestFilePath)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	cfg := pkg.NewConfig(envMap)
+// 	api := pkg.NewSlackClient(cfg.SlackToken)
+
+// 	var fixtures = []struct {
+// 		channelID     string
+// 		patchFunc     func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error)
+// 		expected      []*pkg.SlackMessage
+// 		expectedError error
+// 	}{
+// 		{
+// 			channelID: "correct_channel_id",
+// 			patchFunc: func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error) {
+// 				messages := []*pkg.SlackMessage{
+// 					{Timestamp: 2.0, Text: "test2"},
+// 					{Timestamp: 1.0, Text: "test1"},
+// 				}
+// 				return messages, nil
+// 			},
+// 			expected: []*pkg.SlackMessage{
+// 				{Timestamp: 2.0, Text: "test2"},
+// 				{Timestamp: 1.0, Text: "test1"},
+// 			},
+// 			expectedError: nil,
+// 		},
+// 		{
+// 			channelID: "wrong_channel_id",
+// 			patchFunc: func(*pkg.ExportedSlackClient, string) ([]*pkg.SlackMessage, error) {
+// 				return nil, errors.New("error: channel_not_found")
+// 			},
+// 			expected:      nil,
+// 			expectedError: errors.New("error: channel_not_found"),
+// 		},
+// 	}
+// 	for _, tt := range fixtures {
+// 		t.Run(tt.channelID, func(t *testing.T) {
+// 			monkey.PatchInstanceMethod(reflect.TypeOf(api), "GetConversationHistory", tt.patchFunc)
+// 			slackMessages, err := api.FetchMessages(tt.channelID)
+// 			assert.Equal(t, tt.expected, slackMessages)
+// 			assert.Equal(t, tt.expectedError, err)
+// 		})
+// 	}
+// }
 
 func TestSlackClient_FilterMessages(t *testing.T) {
 	createEnvFile()
